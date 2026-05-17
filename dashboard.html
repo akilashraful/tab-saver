@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TabSaver Dashboard</title>
+  <script src="tailwind.min.js"></script>
+  <script src="tailwind-config-dashboard.js"></script>
+  <link rel="stylesheet" href="fonts/phosphor-fill.css">
+  <link rel="stylesheet" href="fonts/phosphor-bold.css">
+  <link rel="stylesheet" href="fonts/phosphor-regular.css">
+  <link rel="stylesheet" href="fonts/phosphor-thin.css">
+  <style>
+    :root {
+      --bg:#f8fafc; --text:#1e293b; --muted:#64748b;
+      --card:#ffffff; --input:#ffffff; --input-border:#e2e8f0;
+      --panel:rgba(255,255,255,0.8); --panel-border:rgba(226,232,240,0.8);
+    }
+    html.dark {
+      --bg:#050510; --text:#e2e8f0; --muted:#94a3b8;
+      --card:rgba(255,255,255,0.03); --input:rgba(0,0,0,0.3); --input-border:rgba(255,255,255,0.1);
+      --panel:rgba(10,10,15,0.6); --panel-border:rgba(255,255,255,0.08);
+    }
+    body { font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; transition:background .3s,color .3s; }
+    .mono { font-family:'JetBrains Mono',monospace; }
+    .bg-grid { background-size:40px 40px; background-image:linear-gradient(to right,rgba(100,100,100,0.05) 1px,transparent 1px),linear-gradient(to bottom,rgba(100,100,100,0.05) 1px,transparent 1px); }
+    .ambient-glow { background:radial-gradient(circle at 50% 50%,rgba(200,64,40,0.08),transparent 60%); position:absolute; top:-20%;left:-20%;width:140%;height:140%;pointer-events:none;z-index:0; }
+    .glass-panel { background:var(--panel); backdrop-filter:blur(20px); border-right:1px solid var(--panel-border); }
+    .glass-card { background:var(--card); border:1px solid var(--input-border); transition:all .2s ease; }
+    .glass-card:hover { border-color:rgba(200,64,40,0.5); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.1); }
+    .glass-card-static { background:var(--card); border:1px solid var(--input-border); }
+    .clean-input { background:var(--input); border:1px solid var(--input-border); transition:all .2s ease; color:var(--text); }
+    .clean-input:focus { outline:none; border-color:#C84028; box-shadow:0 0 0 3px rgba(200,64,40,0.1); }
+    .clean-input::placeholder { color:var(--muted); }
+    .btn-primary { background:#C84028; color:white; transition:all .3s ease; box-shadow:0 4px 6px -1px rgba(200,64,40,0.3); }
+    .btn-primary:hover { background:#b03520; box-shadow:0 10px 15px -3px rgba(200,64,40,0.4); transform:translateY(-1px); }
+    .btn-secondary { background:var(--card); border:1px solid var(--input-border); color:var(--text); transition:all .2s ease; }
+    .btn-secondary:hover { border-color:#C84028; color:#C84028; }
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+    html.dark ::-webkit-scrollbar-thumb { background:#334155; }
+    .nav-pill { transition:all .2s; }
+    .nav-pill.active { background:var(--card); color:#C84028; border:1px solid var(--input-border); box-shadow:0 2px 4px rgba(0,0,0,0.05); }
+    .hidden { display:none !important; }
+
+    /* Toggle */
+    .toggle-checkbox:checked + .toggle-track { background-color:rgba(200,64,40,0.2); border-color:#C84028; }
+    .toggle-checkbox:checked + .toggle-track .toggle-knob { transform:translateX(20px); background-color:#C84028; }
+
+    /* Custom checkbox */
+    .custom-check:checked { background:#C84028; border-color:#C84028; }
+
+    /* Theme toggle icons */
+    .icon-moon { display:block; }
+    .icon-sun  { display:none; }
+    html.dark .icon-moon { display:none; }
+    html.dark .icon-sun  { display:block; }
+  </style>
+</head>
+<body class="h-screen w-full relative flex">
+
+<div class="fixed inset-0 bg-grid z-0 pointer-events-none"></div>
+<div class="ambient-glow pointer-events-none"></div>
+
+<!-- ══════ SIDEBAR ══════ -->
+<aside class="w-64 glass-panel z-20 flex flex-col h-full relative">
+  <div class="h-20 flex items-center px-6 border-b border-slate-200 dark:border-white/10 gap-3">
+    <img src="icons/icon48.png" class="w-8 h-8 rounded-lg object-contain" alt="TabSaver">
+    <div>
+      <h1 class="text-lg font-bold text-slate-800 dark:text-white">Tab<span class="text-[#C84028]">Saver</span></h1>
+      <a href="https://neurotive.io/" target="_blank" class="text-[10px] text-slate-400 mono uppercase tracking-widest hover:text-[#C84028] transition-colors">BY NEUROTIVE</a>
+    </div>
+  </div>
+
+  <nav class="flex-1 px-4 py-6 space-y-2">
+    <button class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-[#C84028] bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm" data-target="panel-sessions">
+      <i class="ph-fill ph-squares-four text-lg"></i> Saved Sessions
+    </button>
+    <button class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent" data-target="panel-automation">
+      <i class="ph-fill ph-robot text-lg"></i> Automation
+    </button>
+    <button class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent" data-target="panel-preferences">
+      <i class="ph-fill ph-sliders-horizontal text-lg"></i> Preferences
+    </button>
+    <button class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent" data-target="panel-data">
+      <i class="ph-fill ph-hard-drives text-lg"></i> Data Center
+    </button>
+  </nav>
+
+  <div class="px-6 py-6 border-t border-slate-200 dark:border-white/10">
+    <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4">Statistics</h3>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="glass-card-static p-3 rounded-xl">
+        <span class="text-[10px] text-slate-500 block mb-1">Sessions</span>
+        <span class="text-lg font-mono font-bold text-slate-800 dark:text-white" id="statSessions">0</span>
+      </div>
+      <div class="glass-card-static p-3 rounded-xl">
+        <span class="text-[10px] text-slate-500 block mb-1">Saved Tabs</span>
+        <span class="text-lg font-mono font-bold text-[#C84028]" id="statTabs">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="p-6 flex items-center justify-between">
+    <div class="flex items-center gap-2 text-[10px] text-slate-500">
+      <i class="ph-fill ph-shield-check text-green-500"></i> Local Only
+    </div>
+    <button id="theme-toggle" class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-200 dark:border-white/10">
+      <!-- Moon: shown in light mode -->
+      <svg class="icon-moon w-4 h-4 text-slate-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor">
+        <path d="M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23Z"/>
+      </svg>
+      <!-- Sun: shown in dark mode -->
+      <svg class="icon-sun w-4 h-4 text-slate-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor">
+        <path d="M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z"/>
+      </svg>
+    </button>
+  </div>
+</aside>
+
+<!-- ══════ MAIN ══════ -->
+<main class="flex-1 flex flex-col z-10 relative h-full">
+
+  <!-- ── SESSIONS ── -->
+  <section id="panel-sessions" class="tab-panel flex flex-col h-full absolute inset-0 opacity-100 z-10">
+    <header class="h-20 border-b border-slate-200 dark:border-white/10 flex items-center justify-between px-8 bg-white/50 dark:bg-dark-panel/50 backdrop-blur-md shrink-0">
+      <div class="flex items-center gap-5">
+        <h2 class="text-xl font-bold">Sessions</h2>
+        <div class="flex bg-slate-100 dark:bg-white/5 p-1 rounded-lg border border-slate-200 dark:border-white/5">
+          <button class="nav-pill active rounded-md py-1.5 px-4 text-xs font-medium" data-filter="all">All</button>
+          <button class="nav-pill rounded-md py-1.5 px-4 text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-white" data-filter="manual">Manual</button>
+          <button class="nav-pill rounded-md py-1.5 px-4 text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-white" data-filter="auto">Auto</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative w-56">
+          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input id="searchInput" type="text" placeholder="Search sessions…" class="clean-input w-full rounded-xl py-2 pl-9 pr-8 text-sm">
+          <button id="btnClearSearch" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">✕</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="sessionsContainer" class="flex-1 overflow-y-auto p-8">
+      <!-- Loading / empty / no-results states -->
+      <div id="loadingState" class="flex flex-col items-center justify-center h-64 gap-4 text-slate-400">
+        <div class="w-8 h-8 border-3 border-slate-200 dark:border-white/10 border-t-[#C84028] rounded-full animate-spin"></div>
+        <p class="text-sm">Loading sessions…</p>
+      </div>
+      <div id="globalEmpty" class="hidden flex flex-col items-center justify-center h-64 gap-4 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+          <i class="ph-thin ph-folders text-3xl text-slate-400"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-700 dark:text-slate-200">No sessions yet</h3>
+          <p class="text-sm text-slate-400 mt-1">Save your first session using the popup or button above.</p>
+        </div>
+      </div>
+      <div id="noResults" class="hidden flex flex-col items-center justify-center h-64 gap-3 text-center">
+        <i class="ph ph-magnifying-glass text-4xl text-slate-300 dark:text-slate-600"></i>
+        <p class="text-slate-500">No sessions matched your search.</p>
+      </div>
+      <!-- Cards injected here by JS -->
+      <div id="cardsGrid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- ── AUTOMATION ── -->
+  <section id="panel-automation" class="tab-panel flex flex-col h-full absolute inset-0 opacity-0 pointer-events-none z-0">
+    <header class="h-20 border-b border-slate-200 dark:border-white/10 flex items-center px-8 bg-white/50 dark:bg-dark-panel/50 backdrop-blur-md shrink-0">
+      <h2 class="text-xl font-bold">Automation</h2>
+    </header>
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Auto-save -->
+        <div class="glass-card-static rounded-2xl p-6 md:col-span-2">
+          <div class="flex justify-between items-start mb-6 border-b border-slate-100 dark:border-white/10 pb-6">
+            <div>
+              <h3 class="text-lg font-bold flex items-center gap-2"><i class="ph-fill ph-arrows-clockwise text-[#C84028]"></i> Auto-Save</h3>
+              <p class="text-sm text-slate-500 mt-1">Periodically save all open tabs automatically.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="toggleAutoSave" class="sr-only toggle-checkbox">
+              <div class="w-12 h-6 bg-slate-200 dark:bg-white/10 rounded-full toggle-track transition-colors border border-transparent relative">
+                <div class="toggle-knob absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm"></div>
+              </div>
+            </label>
+          </div>
+          <div id="autoSaveBody" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Save Interval</label>
+              <div class="grid grid-cols-4 gap-2">
+                <button class="nav-pill active rounded-lg py-2 px-3 text-xs font-medium border border-transparent" data-interval="30">30m</button>
+                <button class="nav-pill bg-slate-50 dark:bg-white/5 rounded-lg py-2 px-3 text-xs font-medium border border-transparent text-slate-600 dark:text-slate-400" data-interval="60">1h</button>
+                <button class="nav-pill bg-slate-50 dark:bg-white/5 rounded-lg py-2 px-3 text-xs font-medium border border-transparent text-slate-600 dark:text-slate-400" data-interval="360">6h</button>
+                <button class="nav-pill bg-slate-50 dark:bg-white/5 rounded-lg py-2 px-3 text-xs font-medium border border-transparent text-slate-600 dark:text-slate-400" data-interval="1440">24h</button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex justify-between">
+                <span>Keep Last</span><span class="text-[#C84028] mono" id="keepCountLabel">10 saves</span>
+              </label>
+              <input type="range" id="keepCount" min="3" max="30" value="10" class="w-full h-2 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#C84028]">
+              <div class="flex justify-between text-[10px] text-slate-400 mt-1 mono"><span>3</span><span>30</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Domain Filtering -->
+        <div class="glass-card-static rounded-2xl p-6 md:col-span-2">
+          <h3 class="text-lg font-bold flex items-center gap-2 mb-1"><i class="ph-fill ph-funnel text-slate-400"></i> Domain Filtering</h3>
+          <p class="text-xs text-slate-500 mb-5">Control which domains are included or excluded when saving.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <select id="domainFilterMode" class="clean-input w-full rounded-xl py-3 px-4 text-sm mb-4 appearance-none cursor-pointer">
+                <option value="none">Capture everything (No filter)</option>
+                <option value="exclude">Ignore specified domains (Blacklist)</option>
+                <option value="include">Only save specified domains (Whitelist)</option>
+              </select>
+              <div class="relative">
+                <input id="domainInput" type="text" placeholder="e.g. youtube.com" class="clean-input w-full rounded-xl py-2.5 pl-4 pr-20 text-sm">
+                <button id="btnAddDomain" class="absolute right-1 top-1 bottom-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 px-3 rounded-lg text-xs font-bold transition-colors">ADD</button>
+              </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-white/5 rounded-xl p-4 border border-slate-100 dark:border-white/5 min-h-[120px]">
+              <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-3">Active Filters</p>
+              <div id="domainTagList" class="flex flex-wrap gap-2"></div>
+              <p id="domainEmptyMsg" class="text-xs text-slate-400 italic">No domains added.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PREFERENCES ── -->
+  <section id="panel-preferences" class="tab-panel flex flex-col h-full absolute inset-0 opacity-0 pointer-events-none z-0">
+    <header class="h-20 border-b border-slate-200 dark:border-white/10 flex items-center px-8 bg-white/50 dark:bg-dark-panel/50 backdrop-blur-md shrink-0">
+      <h2 class="text-xl font-bold">Preferences</h2>
+    </header>
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="glass-card-static rounded-2xl p-6 md:col-span-2">
+          <h3 class="text-lg font-bold flex items-center gap-2 mb-1"><i class="ph-fill ph-magic-wand text-slate-400"></i> Behavior</h3>
+          <p class="text-xs text-slate-500 mb-6">Customize how the extension handles saves.</p>
+          <div class="space-y-4">
+            <label class="flex items-center gap-3 cursor-pointer group">
+              <div class="relative flex items-center justify-center">
+                <input type="checkbox" id="setCloseAfterSave" class="peer appearance-none w-5 h-5 border border-slate-300 dark:border-white/20 rounded custom-check transition-colors cursor-pointer">
+                <i class="ph-bold ph-check absolute text-white opacity-0 peer-checked:opacity-100 text-xs pointer-events-none transition-opacity"></i>
+              </div>
+              <span class="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Close tabs automatically after saving</span>
+            </label>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DATA CENTER ── -->
+  <section id="panel-data" class="tab-panel flex flex-col h-full absolute inset-0 opacity-0 pointer-events-none z-0">
+    <header class="h-20 border-b border-slate-200 dark:border-white/10 flex items-center px-8 bg-white/50 dark:bg-dark-panel/50 backdrop-blur-md shrink-0">
+      <h2 class="text-xl font-bold">Data Center</h2>
+    </header>
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="glass-card-static rounded-2xl p-6 md:col-span-2">
+          <div class="flex justify-between items-start mb-6 border-b border-slate-100 dark:border-white/10 pb-6">
+            <div>
+              <h3 class="text-lg font-bold flex items-center gap-2"><i class="ph-fill ph-export text-slate-400"></i> Backup & Restore</h3>
+              <p class="text-sm text-slate-500 mt-1">Export sessions to JSON or import from a backup file.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <button id="btnExport" class="flex-1 btn-secondary py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+              <i class="ph-bold ph-download-simple"></i> Export All Data
+            </button>
+            <button id="btnImport" class="flex-1 btn-secondary py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+              <i class="ph-bold ph-upload-simple"></i> Import Backup
+            </button>
+          </div>
+          <input type="file" id="importFile" accept=".json" class="hidden">
+        </div>
+
+        <div class="glass-card-static rounded-2xl p-6 md:col-span-2 flex flex-col md:flex-row items-center justify-between border border-red-500/20 bg-red-500/5">
+          <div class="mb-4 md:mb-0">
+            <h3 class="text-lg font-bold text-red-600 dark:text-red-400 flex items-center gap-2"><i class="ph-fill ph-warning-circle"></i> Danger Zone</h3>
+            <p class="text-sm text-slate-500 mt-1">Permanently erase all stored sessions. This cannot be undone.</p>
+          </div>
+          <button id="btnDeleteAll" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all flex items-center gap-2 whitespace-nowrap">
+            <i class="ph-bold ph-trash"></i> Delete All Sessions
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════ MODALS ══════ -->
+
+<!-- Rename Modal -->
+<div id="renameModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+  <div class="bg-white dark:bg-[#0a0a0f] border border-slate-200 dark:border-white/10 rounded-2xl p-7 w-full max-w-sm shadow-2xl">
+    <h3 class="text-lg font-bold mb-5">Rename Session</h3>
+    <input id="renameInput" type="text" class="clean-input w-full rounded-xl py-3 px-4 text-sm mb-5" placeholder="Enter new name…">
+    <div class="flex gap-3">
+      <button id="btnRenameCancel" class="flex-1 btn-secondary py-2.5 rounded-xl text-sm font-medium">Cancel</button>
+      <button id="btnRenameSave"   class="flex-1 btn-primary py-2.5 rounded-xl text-sm font-bold">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+  <div class="bg-white dark:bg-[#0a0a0f] border border-slate-200 dark:border-white/10 rounded-2xl p-7 w-full max-w-sm shadow-2xl text-center">
+    <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+      <i class="ph-fill ph-trash text-2xl text-red-500"></i>
+    </div>
+    <h3 class="text-lg font-bold mb-2" id="deleteModalTitle">Delete session?</h3>
+    <p class="text-sm text-slate-500 mb-6" id="deleteModalBody">This cannot be undone.</p>
+    <div class="flex gap-3">
+      <button id="btnDeleteCancel"  class="flex-1 btn-secondary py-2.5 rounded-xl text-sm font-medium">Cancel</button>
+      <button id="btnDeleteConfirm" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl text-sm font-bold transition-colors">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restore Modal -->
+<div id="restoreModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+  <div class="bg-white dark:bg-[#0a0a0f] border border-slate-200 dark:border-white/10 rounded-2xl p-7 w-full max-w-sm shadow-2xl text-center relative">
+    <button id="btnRestoreClose" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+      <i class="ph-bold ph-x"></i>
+    </button>
+    <div class="w-14 h-14 rounded-full bg-[#C84028]/10 flex items-center justify-center mx-auto mb-4 border border-[#C84028]/20">
+      <i class="ph-fill ph-arrow-counter-clockwise text-2xl text-[#C84028]"></i>
+    </div>
+    <h3 class="text-lg font-bold mb-2">Restore Session</h3>
+    <p class="text-sm text-slate-500 mb-6" id="restoreModalBody">Choose where to open the tabs.</p>
+    <div class="flex flex-col gap-2.5">
+      <button id="btnRestoreCurrent" class="btn-primary w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"><i class="ph-bold ph-browser"></i> Current Window</button>
+      <button id="btnRestoreNew"     class="btn-secondary w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2"><i class="ph-bold ph-browsers"></i> New Window</button>
+      <button id="btnRestoreCancel"  class="w-full py-2 text-sm text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Tabs Modal -->
+<div id="viewTabsModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+  <div class="bg-white dark:bg-[#0a0a0f] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+    <div class="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/10 shrink-0">
+      <div>
+        <h3 class="font-bold text-lg" id="viewTabsTitle">Tabs</h3>
+        <p class="text-xs text-slate-500 mono" id="viewTabsSubtitle"></p>
+      </div>
+      <button id="btnViewTabsClose" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+        <i class="ph-bold ph-x"></i>
+      </button>
+    </div>
+    <div id="viewTabsContent" class="overflow-y-auto flex-1 p-4 space-y-1"></div>
+  </div>
+</div>
+
+<!-- Quick Save Modal -->
+<div id="quickSaveModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+  <div class="bg-white dark:bg-[#0a0a0f] border border-slate-200 dark:border-white/10 rounded-2xl p-7 w-full max-w-sm shadow-2xl">
+    <h3 class="text-lg font-bold mb-1">Save Current Tab</h3>
+    <p class="text-sm text-slate-400 mb-5">Name will be taken from page title if left empty.</p>
+    <input id="quickSaveInput" type="text" class="clean-input w-full rounded-xl py-3 px-4 text-sm mb-4" placeholder="Session name (optional)…">
+    <label class="flex items-center gap-3 mb-5 cursor-pointer">
+      <div class="relative flex items-center justify-center">
+        <input type="checkbox" id="quickSaveClose" class="peer appearance-none w-5 h-5 border border-slate-300 dark:border-white/20 rounded custom-check transition-colors cursor-pointer">
+        <i class="ph-bold ph-check absolute text-white opacity-0 peer-checked:opacity-100 text-xs pointer-events-none transition-opacity"></i>
+      </div>
+      <span class="text-sm text-slate-600 dark:text-slate-300">Close tab after saving</span>
+    </label>
+    <div class="flex gap-3">
+      <button id="btnQuickSaveCancel"  class="flex-1 btn-secondary py-2.5 rounded-xl text-sm font-medium">Cancel</button>
+      <button id="btnQuickSaveConfirm" class="flex-1 btn-primary py-2.5 rounded-xl text-sm font-bold">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-2.5 rounded-full text-sm font-bold shadow-2xl whitespace-nowrap flex items-center gap-2">
+  <i class="ph-fill ph-check-circle text-[#C84028]" id="toastIcon"></i>
+  <span id="toastMsg"></span>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
